@@ -17,8 +17,7 @@ class MenuWindow:
             "Bubble Sort",
             "Selection Sort",
             "Insertion Sort",
-            "Merge Sort",
-            "Quick Sort"
+            "Merge Sort"
         ]
 
         # Add "Reset" button
@@ -59,11 +58,7 @@ class MenuWindow:
             sorting_algorithm_generator = sorting_algorithm(draw_info, is_ascending)
         if self.clicked.get() == "Merge Sort" and not is_sorting:
             is_sorting = True
-            # sorting_algorithm = merge_sort
-            sorting_algorithm_generator = sorting_algorithm(draw_info, is_ascending)
-        if self.clicked.get() == "Quick Sort" and not is_sorting:
-            is_sorting = True
-            # sorting_algorithm = quick_sort
+            sorting_algorithm = merge_sort
             sorting_algorithm_generator = sorting_algorithm(draw_info, is_ascending)
 
     # Reset the sorting algorithm and generate new data
@@ -107,10 +102,9 @@ def draw_list(drawing_information, color_positions={}, clear_bg=False):
 
     for i, val in enumerate(values_list):
         color = (199, 199, 199) if i not in color_positions else color_positions[i]
-        rect = (i * drawing_information.block_width, (drawing_information.max_val - val) * drawing_information.block_height, 
-                    drawing_information.block_width, val * drawing_information.block_height)
         x = i * drawing_information.block_width
         y = (drawing_information.max_val - val) * drawing_information.block_height
+        rect = (x, y, drawing_information.block_width, val * drawing_information.block_height)
         pygame.draw.rect(drawing_information.window, color, rect)
 
         for j in range(3):
@@ -160,8 +154,45 @@ def insertion_sort(draw_info, ascending=True):
     
     return values_list
 
+def merge_sort(draw_info, ascending=True):
+    values_list = draw_info.values_list
 
+    if len(values_list) <= 1:
+        return values_list
+    
+    current_size = 1
+    while current_size < len(values_list):
+        for left in range(0, len(values_list), 2*current_size):
+            mid = left + current_size - 1
+            right = min(left + 2*current_size - 1, len(values_list) - 1)
+            left_half = values_list[left:mid+1]
+            right_half = values_list[mid+1:right+1]
+            i, j, k = 0, 0, left
+            while i < len(left_half) and j < len(right_half):
+                if (left_half[i] <= right_half[j] and ascending) or (left_half[i] >= right_half[j] and not ascending):
+                    values_list[k] = left_half[i]
+                    i += 1
+                else:
+                    values_list[k] = right_half[j]
+                    j += 1
 
+                k += 1
+                draw_list(draw_info, {k: (255,0,0)}, True)
+                yield True
+
+            while i < len(left_half):
+                values_list[k] = left_half[i]
+                i += 1
+                k += 1
+
+            while j < len(right_half):
+                values_list[k] = right_half[j]
+                j += 1
+                k += 1
+
+        current_size *= 2
+    
+    return values_list
 
 def main():
     global num_vals, min_val, max_val, is_sorting, is_ascending, draw_info, sorting_algorithm, sorting_algorithm_generator
