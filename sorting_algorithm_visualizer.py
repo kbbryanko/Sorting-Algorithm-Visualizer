@@ -17,7 +17,8 @@ class MenuWindow:
             "Bubble Sort",
             "Selection Sort",
             "Insertion Sort",
-            "Merge Sort"
+            "Merge Sort",
+            "Quick Sort"
         ]
 
         # Add "Reset" button
@@ -48,17 +49,21 @@ class MenuWindow:
             is_sorting = True
             sorting_algorithm = bubble_sort
             sorting_algorithm_generator = sorting_algorithm(draw_info, is_ascending)
-        if self.clicked.get() == "Selection Sort" and not is_sorting:
+        elif self.clicked.get() == "Selection Sort" and not is_sorting:
             is_sorting = True
             sorting_algorithm = selection_sort
             sorting_algorithm_generator = sorting_algorithm(draw_info, is_ascending)
-        if self.clicked.get() == "Insertion Sort" and not is_sorting:
+        elif self.clicked.get() == "Insertion Sort" and not is_sorting:
             is_sorting = True
             sorting_algorithm = insertion_sort
             sorting_algorithm_generator = sorting_algorithm(draw_info, is_ascending)
-        if self.clicked.get() == "Merge Sort" and not is_sorting:
+        elif self.clicked.get() == "Merge Sort" and not is_sorting:
             is_sorting = True
             sorting_algorithm = merge_sort
+            sorting_algorithm_generator = sorting_algorithm(draw_info, is_ascending)
+        elif self.clicked.get() == "Quick Sort" and not is_sorting:
+            is_sorting = True
+            sorting_algorithm = quick_sort
             sorting_algorithm_generator = sorting_algorithm(draw_info, is_ascending)
 
     # Reset the sorting algorithm and generate new data
@@ -67,6 +72,7 @@ class MenuWindow:
         is_sorting = False
         self.values_list = generate_starting_list(num_vals, min_val, max_val)
         draw_info.set_list(self.values_list)
+
 
 # DrawInformation class for storing and updating information for drawing the list
 class DrawInformation:
@@ -86,11 +92,13 @@ class DrawInformation:
         self.block_width = round((self.window_width) / len(values_list))
         self.block_height = math.floor((self.window_height) / (self.max_val - self.min_val))
 
+
 # Draw the list of elements
 def draw(drawing_information):
     drawing_information.window.fill(drawing_information.BACKGROUND_COLOR)
     draw_list(drawing_information)
     pygame.display.update()
+
 
 # Draw the elements of the list, with optional colors and background clearing
 def draw_list(drawing_information, color_positions={}, clear_bg=False):
@@ -111,9 +119,13 @@ def draw_list(drawing_information, color_positions={}, clear_bg=False):
             pygame.draw.rect(drawing_information.window, (80, 80, 80),
                              (x - j, y - j, drawing_information.block_width, drawing_information.window_height), 1)
 
+
 # Generate a starting list of values with a specified number of values, minimum value, and maximum value
 def generate_starting_list(num_vals, min_val, max_val):
-    return [random.randint(min_val, max_val) for _ in range(num_vals)]
+    values_list = random.sample(range(min_val, max_val), num_vals)
+    return values_list
+
+
 
 def bubble_sort(draw_info, ascending=True):
     values_list = draw_info.values_list
@@ -126,6 +138,7 @@ def bubble_sort(draw_info, ascending=True):
             yield True
 
     return values_list
+
 
 def selection_sort(draw_info, ascending=True):
     values_list = draw_info.values_list
@@ -141,6 +154,7 @@ def selection_sort(draw_info, ascending=True):
         
     return values_list
 
+
 def insertion_sort(draw_info, ascending=True):
     values_list = draw_info.values_list
 
@@ -153,6 +167,7 @@ def insertion_sort(draw_info, ascending=True):
             yield True
     
     return values_list
+
 
 def merge_sort(draw_info, ascending=True):
     values_list = draw_info.values_list
@@ -184,18 +199,60 @@ def merge_sort(draw_info, ascending=True):
                 values_list[k] = left_half[i]
                 i += 1
                 k += 1
+                draw_list(draw_info, {k: (255,0,0)}, True)
+                yield True
 
             while j < len(right_half):
                 values_list[k] = right_half[j]
                 j += 1
                 k += 1
+                draw_list(draw_info, {k: (255,0,0)}, True)
+                yield True
 
         current_size *= 2
     
     return values_list
 
+
+def quick_sort(draw_info, ascending=True):
+    values_list = draw_info.values_list
+    stack = [[0, len(values_list) - 1]]
+    
+    while stack:
+        low, high = stack.pop()
+
+        if low < high:
+            pivot = values_list[low]
+            left = low + 1
+            right = high
+            done = False
+
+            while not done:
+                while left <= right and ((values_list[left] < pivot and ascending) or (values_list[left] > pivot and not (ascending))):
+                    left += 1
+
+                while right >= left and ((values_list[right] > pivot and ascending) or (values_list[right] < pivot and not (ascending))):
+                    right -= 1
+
+                if right < left or left == right:
+                    done = True
+                else:
+                    values_list[left], values_list[right] = values_list[right], values_list[left]
+                    draw_list(draw_info, {left: (255, 0, 0), right: (255, 0, 0)}, True)
+                    yield True
+
+            values_list[low], values_list[right] = values_list[right], values_list[low]
+            draw_list(draw_info, {low: (255, 0, 0), right: (255, 0, 0)}, True)
+            yield True
+
+            stack.append([low, right])
+            stack.append([right + 1, high])
+
+    return values_list
+
+
 def main():
-    global num_vals, min_val, max_val, is_sorting, is_ascending, draw_info, sorting_algorithm, sorting_algorithm_generator
+    global num_vals, min_val, max_val, draw_info, is_sorting
 
     run = True
     clock = pygame.time.Clock()
@@ -203,17 +260,13 @@ def main():
     min_val = 0
     max_val = 100
     is_sorting = False
-    is_ascending = True
-
-    sorting_algorithm = None
-    sorting_algorithm_generator = None
 
     pygame.init()
     values_list = generate_starting_list(num_vals, min_val, max_val)
     draw_info = DrawInformation("Sorting Algorithm Visualizer", 1000, 600, values_list)
 
     root = tkinter.Tk()
-    menu_window = MenuWindow(root, "Sorting Alogrithm Controller", '400x500', "Control Menu")
+    menu_window = MenuWindow(root, "Sorting Algorithm Controller", '400x500', "Control Menu")
 
     while run:
         root.update()
@@ -221,8 +274,10 @@ def main():
 
         if is_sorting:
             try:
+                # Yield control so that the GUI can update
                 next(sorting_algorithm_generator)
             except StopIteration:
+                # Sorting is done, reset is_sorting to False
                 is_sorting = False
         else:
             draw(draw_info)
@@ -230,7 +285,6 @@ def main():
         pygame.display.update()
 
         for event in pygame.event.get():
-
             if event.type == pygame.QUIT:
                 run = False
 
